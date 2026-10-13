@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: doctor-tracker-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.18.0
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_NAME
+        value: Alex Morgan
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SEED_DEMO
+        value: false
