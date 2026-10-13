@@ -82,6 +82,7 @@ Search uses case-insensitive **word prefixes** across useful fields: `sara card`
 
 - Doctor fields: name, specialization, hospital, phone, email, timestamps, computed patient count.
 - Patient fields: name, age (0–120), gender (`Female`, `Male`, `Other`), condition, status (`Active`, `Recovered`, `Critical`), phone, optional email, doctor assignment, timestamps.
+- Doctor and patient phone values must contain 7–15 digits and fit within 25 characters. Spaces, `+`, parentheses, periods, and hyphens are accepted for formatting; a value made only of formatting characters is rejected.
 - Each patient has exactly one existing doctor. Editing a patient can reassign that doctor.
 - Deleting a patient from a doctor's page permanently deletes the same record from the global patient list and dashboard. It is not merely an unassignment.
 - Dates filter `createdAt`, in **UTC**, with inclusive `from` and `to` calendar dates. Newest-first pagination uses `createdAt` plus `_id` for stable ordering.
@@ -128,7 +129,7 @@ The included `render.yaml` configures a standalone Render web service, a build c
 
 1. Create a MongoDB Atlas database and restricted database user. Permit the hosting platform's outbound network access.
 2. Import this repository as a Render service or Blueprint. Configure `MONGODB_URI`, exact `FRONTEND_ORIGIN`, administrator settings, and a generated `SESSION_SECRET`. Keep demo seeding disabled unless publishing an intentionally synthetic evaluation demo.
-3. Deploy the frontend separately to Netlify or Vercel. Configure its server-side `API_BASE_URL` to the Render service origin. Route browser `/api/*` requests through the frontend's reverse proxy. Preserve the `X-Requested-With`, Origin, cookie, Set-Cookie, and trusted HTTPS forwarding headers.
+3. Deploy the frontend separately to Netlify or Vercel. Configure its server-side `BACKEND_URL` to the Render service origin, without `/api`. Make it available during the frontend build and at runtime. Route browser `/api/*` requests through the frontend's reverse proxy. Preserve the `X-Requested-With`, Origin, cookie, Set-Cookie, and trusted HTTPS forwarding headers.
 4. Verify `/api/health`, login, create/edit/delete, logout, and data persistence on the deployed frontend before calling the deployment complete.
 
 For another host, `Dockerfile` builds a non-root production image. Production never downloads or starts the local MongoDB binary; its database must be externally managed.

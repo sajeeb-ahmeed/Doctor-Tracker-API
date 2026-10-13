@@ -8,8 +8,13 @@ const phone = z
   .trim()
   .min(7)
   .max(25)
-  .regex(/^[+\d\s().-]+$/, 'Use a valid phone number.');
-const email = z.email().trim().toLowerCase().max(254);
+  .regex(/^[+\d\s().-]+$/, 'Use a valid phone number.')
+  .refine((value) => {
+    const digits = value.replace(/\D/g, '').length;
+    return digits >= 7 && digits <= 15;
+  }, 'Phone numbers must contain 7 to 15 digits.');
+const normalizedEmail = z.string().trim().toLowerCase().max(254);
+const email = normalizedEmail.pipe(z.email());
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Choose a valid doctor.');
 export const doctorInput = z
   .object({ name: text(), specialization: text(), hospital: text(), phone, email })
@@ -22,7 +27,7 @@ export const patientInput = z
     condition: text(),
     status: z.enum(['Active', 'Recovered', 'Critical']).default('Active'),
     phone,
-    email: email.or(z.literal('')).optional(),
+    email: normalizedEmail.pipe(z.email().or(z.literal(''))).optional(),
     doctorId: objectId,
   })
   .strict();

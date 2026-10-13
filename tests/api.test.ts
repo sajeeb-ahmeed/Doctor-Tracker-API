@@ -6,6 +6,7 @@ import { createApp } from '../src/app.js';
 import { ensureAdmin } from '../src/seed.js';
 import { ensureIndexes, Patient, Doctor, backfillSearchTokens } from '../src/models.js';
 import { indexedSearch, searchTokens } from '../src/search.js';
+import { doctorInput, patientInput, patientPatch } from '../src/validation.js';
 import type { Config } from '../src/config.js';
 import type { Express } from 'express';
 
@@ -41,6 +42,45 @@ const patient = {
   status: 'Active',
   phone: '+880 1800 123456',
 };
+const invalidPhones = ['-------', '(123)45', '1234567890123456'];
+
+describe('contact input validation', () => {
+  it.each(invalidPhones)('rejects invalid phone %s for doctors and patients', (phone) => {
+    expect(doctorInput.safeParse({ ...doctor, phone }).success).toBe(false);
+    expect(
+      patientInput.safeParse({ ...patient, phone, doctorId: '000000000000000000000001' }).success,
+    ).toBe(false);
+    expect(patientPatch.safeParse({ phone }).success).toBe(false);
+  });
+
+  it.each(['123-4567', '+123 456 789 012 345'])(
+    'accepts formatted phone %s at the supported digit boundaries',
+    (phone) => {
+      expect(doctorInput.parse({ ...doctor, phone }).phone).toBe(phone);
+      expect(
+        patientInput.parse({ ...patient, phone, doctorId: '000000000000000000000001' }).phone,
+      ).toBe(phone);
+    },
+  );
+
+  it('normalizes doctor and patient email addresses while preserving optional patient email', () => {
+    expect(doctorInput.parse({ ...doctor, email: '  Smith@EXAMPLE.TEST  ' }).email).toBe(
+      'smith@example.test',
+    );
+    const input = { ...patient, doctorId: '000000000000000000000001' };
+    expect(patientInput.parse({ ...input, email: ' Taylor@EXAMPLE.TEST ' }).email).toBe(
+      'taylor@example.test',
+    );
+    expect(patientInput.parse(input).email).toBeUndefined();
+    expect(patientInput.parse({ ...input, email: '' }).email).toBe('');
+    expect(patientInput.parse({ ...input, email: '   ' }).email).toBe('');
+    expect(patientPatch.parse({ email: ' Taylor@EXAMPLE.TEST ' }).email).toBe(
+      'taylor@example.test',
+    );
+    expect(patientPatch.parse({ email: '' }).email).toBe('');
+    expect(doctorInput.safeParse({ ...doctor, email: '   ' }).success).toBe(false);
+  });
+});
 
 beforeAll(async () => {
   mongo = await MongoMemoryServer.create({
@@ -106,7 +146,7 @@ describe('administrator security', () => {
     const response = await agent
       .post('/api/auth/login')
       .set(mutationHeaders)
-      .send({ email: config.adminEmail, password: config.adminPassword });
+      .send({ email: `  ${config.adminEmail.toUpperCase()}  `, password: config.adminPassword });
     expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({ email: config.adminEmail, role: 'admin' });
     expect(response.body.data.passwordHash).toBeUndefined();
@@ -124,8 +164,20 @@ describe('doctor and patient workflows', () => {
       .send({ ...doctor, email: 'bad-email', extra: 'not allowed' });
     expect(invalid.status).toBe(400);
     expect(invalid.body.error.fields.email).toBeTruthy();
-    const created = await agent.post('/api/doctors').set(mutationHeaders).send(doctor);
+    for (const phone of invalidPhones) {
+      const rejected = await agent
+        .post('/api/doctors')
+        .set(mutationHeaders)
+        .send({ ...doctor, phone });
+      expect(rejected.status).toBe(400);
+      expect(rejected.body.error.fields.phone).toBeTruthy();
+    }
+    const created = await agent
+      .post('/api/doctors')
+      .set(mutationHeaders)
+      .send({ ...doctor, email: ` ${doctor.email.toUpperCase()} ` });
     expect(created.status).toBe(201);
+    expect(created.body.data.email).toBe(doctor.email);
     doctorId = created.body.data.id;
     expect(created.body.data.patientCount).toBe(0);
     expect((await agent.post('/api/doctors').set(mutationHeaders).send(doctor)).status).toBe(409);
@@ -166,12 +218,29 @@ describe('doctor and patient workflows', () => {
           .send({ ...patient, age: -1, doctorId })
       ).status,
     ).toBe(400);
+    for (const phone of invalidPhones) {
+      const rejected = await agent
+        .post('/api/patients')
+        .set(mutationHeaders)
+        .send({ ...patient, phone, doctorId });
+      expect(rejected.status).toBe(400);
+      expect(rejected.body.error.fields.phone).toBeTruthy();
+    }
     const created = await agent
       .post('/api/patients')
       .set(mutationHeaders)
-      .send({ ...patient, doctorId });
+      .send({ ...patient, email: ' Taylor@EXAMPLE.TEST ', doctorId });
     expect(created.status).toBe(201);
+    expect(created.body.data.email).toBe('taylor@example.test');
     patientId = created.body.data.id;
+    for (const phone of invalidPhones) {
+      const rejected = await agent
+        .patch(`/api/patients/${patientId}`)
+        .set(mutationHeaders)
+        .send({ phone });
+      expect(rejected.status).toBe(400);
+      expect(rejected.body.error.fields.phone).toBeTruthy();
+    }
     expect(created.body.data.doctor).toMatchObject({ id: doctorId, name: doctor.name });
     expect((await agent.get(`/api/doctors/${doctorId}`)).body.data.patientCount).toBe(1);
   });
