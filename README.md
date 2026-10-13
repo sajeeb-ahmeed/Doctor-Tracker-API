@@ -125,7 +125,7 @@ Lists return `{data: [...], pagination: {page, limit, total, totalPages}}`; sing
 
 ## Deployment
 
-The included `render.yaml` configures a standalone Render web service, a build command of `npm ci && npm run build`, start command `npm start`, and readiness route `/api/health`.
+The included `render.yaml` configures a standalone Render web service, a build command of `npm ci --include=dev && npm run build`, start command `npm start`, and readiness route `/api/health`. Including development dependencies during installation supplies TypeScript and its type declarations for compilation even when `NODE_ENV=production` is configured.
 
 1. Create a MongoDB Atlas database and restricted database user. Permit the hosting platform's outbound network access.
 2. Import this repository as a Render service or Blueprint. Configure `MONGODB_URI`, exact `FRONTEND_ORIGIN`, administrator settings, and a generated `SESSION_SECRET`. Keep demo seeding disabled unless publishing an intentionally synthetic evaluation demo.
