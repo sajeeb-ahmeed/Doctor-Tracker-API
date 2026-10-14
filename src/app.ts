@@ -55,15 +55,13 @@ export function createApp(config: Config, mongoUrl: string) {
 
   app.get('/api/health', (_request, response) => {
     const connected = mongoose.connection.readyState === 1;
-    response
-      .status(connected ? 200 : 503)
-      .json({
-        data: {
-          status: connected ? 'ok' : 'unavailable',
-          database: connected ? 'connected' : 'disconnected',
-          service: 'doctor-tracker-api',
-        },
-      });
+    response.status(connected ? 200 : 503).json({
+      data: {
+        status: connected ? 'ok' : 'unavailable',
+        database: connected ? 'connected' : 'disconnected',
+        service: 'doctor-tracker-api',
+      },
+    });
   });
 
   const store = MongoStore.create({

@@ -21,22 +21,18 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     return;
   }
   if (error instanceof ApiError) {
-    response
-      .status(error.status)
-      .json({
-        error: { message: error.message, ...(error.fields ? { fields: error.fields } : {}) },
-      });
+    response.status(error.status).json({
+      error: { message: error.message, ...(error.fields ? { fields: error.fields } : {}) },
+    });
     return;
   }
   if (error?.code === 11000) {
-    response
-      .status(409)
-      .json({
-        error: {
-          message: 'A doctor with this email already exists.',
-          fields: { email: 'This email is already in use.' },
-        },
-      });
+    response.status(409).json({
+      error: {
+        message: 'A doctor with this email already exists.',
+        fields: { email: 'This email is already in use.' },
+      },
+    });
     return;
   }
   if (error?.type === 'entity.parse.failed') {
