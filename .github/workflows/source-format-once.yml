@@ -1,0 +1,31 @@
+name: One-time source formatting correction
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/source-format-once.yml
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format only pre-existing style differences
+        run: npx prettier --write src/app.ts src/errors.ts
+      - name: Commit formatting only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/app.ts src/errors.ts
+          if git diff --cached --quiet; then
+            echo 'No source formatting changes'
+          else
+            git commit -m 'style(api): normalize Prettier formatting in existing source'
+            git push origin HEAD:main
+          fi
