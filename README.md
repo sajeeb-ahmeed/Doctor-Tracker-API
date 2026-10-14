@@ -1,8 +1,36 @@
-# Doctor Tracker API
+# DoctorTracker API
 
-A standalone Node.js, Express, and MongoDB API for the Doctor Tracker Portal. It provides authenticated doctor and patient management, server-side search and pagination, and database-backed analytics for a responsive Next.js admin interface.
+**The secure, database-backed service behind DoctorTracker.** A standalone REST API for administrator authentication, doctor and patient records, searchable directories and live analytics.
 
-All included demo records are synthetic. This assignment build is an administrator portal; there is no patient-facing login or appointment workflow.
+[![Live API](https://img.shields.io/badge/LIVE%20REST%20API-Check%20health-26394B?style=for-the-badge&logo=render&logoColor=white)](https://doctor-tracker-api-tg86.onrender.com/api/health)
+[![Open the portal](https://img.shields.io/badge/FRONTEND-Open%20DoctorTracker-176B5B?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://doctor-tracker-frontend.onrender.com/login)
+
+[![API CI](https://github.com/sajeeb-ahmeed/Doctor-Tracker-API/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sajeeb-ahmeed/Doctor-Tracker-API/actions/workflows/ci.yml)
+![Express](https://img.shields.io/badge/Express-Node.js-191919?logo=express&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-116149?logo=mongodb&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-Vitest-6E9F18?logo=vitest&logoColor=white)
+
+**[Try the live portal](https://doctor-tracker-frontend.onrender.com/login)** · **[API health](https://doctor-tracker-api-tg86.onrender.com/api/health)** · **[Frontend source](https://github.com/sajeeb-ahmeed/Doctor-Tracker-Portal)** · **[Endpoint reference](#api)**
+
+> **Demo scope:** Administrator-only workflows; synthetic doctors/patients. Not a patient-facing app and not intended for real medical records.
+
+## Hosted services
+
+| Service | Live URL |
+| --- | --- |
+| Premium Next.js frontend | [doctor-tracker-frontend.onrender.com](https://doctor-tracker-frontend.onrender.com/login) |
+| Express REST API | [doctor-tracker-api-tg86.onrender.com](https://doctor-tracker-api-tg86.onrender.com/api/health) |
+| Database | MongoDB Atlas, dedicated `doctor_tracker` database |
+
+Browser requests use the frontend's same-origin `/api/*` rewrite, preserving secure server-side sessions. All public health and authentication checks are documented in the [frontend verification workflow](https://github.com/sajeeb-ahmeed/Doctor-Tracker-Portal/actions/workflows/check-doctortracker-hosting.yml).
+
+```bash
+# Public health check (does not require credentials)
+curl --fail --silent --show-error https://doctor-tracker-api-tg86.onrender.com/api/health
+```
+
+---
 
 ## Local setup
 
@@ -64,11 +92,12 @@ Production startup fails before listening if MongoDB or secure administrator/ses
 
 ## Architecture and decisions
 
-```text
-Next.js frontend
-  -> same-origin /api reverse proxy
-    -> standalone Express API
-      -> MongoDB: users, doctors, patients, sessions
+```mermaid
+flowchart LR
+    C[Browser] --> F[Next.js portal]
+    F -->|Same-origin /api proxy| A[Express REST API]
+    A -->|Mongoose models & aggregations| M[(MongoDB Atlas)]
+    A -->|Persistent sessions| M
 ```
 
 1. **MongoDB-backed sessions instead of client-stored authentication tokens.** Passwords use bcrypt with a work factor of 12. Login regenerates the session ID; logout destroys it in MongoDB. The browser receives only an opaque eight-hour `dt.sid` cookie with HttpOnly, SameSite=Lax, and Secure in production. Next.js should proxy `/api/*` to the backend so deployed frontend and backend domains work with these cookies. Never expose the API origin as the browser's direct cross-site login endpoint without deliberately revisiting cookie policy.
@@ -125,11 +154,13 @@ Lists return `{data: [...], pagination: {page, limit, total, totalPages}}`; sing
 
 ## Deployment
 
+**Current public API:** [https://doctor-tracker-api-tg86.onrender.com/api/health](https://doctor-tracker-api-tg86.onrender.com/api/health). The backend is hosted on Render Free and connects to MongoDB Atlas using credentials stored only in Render environment settings. The project owner confirmed successful login through the separately deployed frontend; automated smoke tests verify health, API forwarding and unauthorized access handling.
+
 The included `render.yaml` configures a standalone Render web service, a build command of `npm ci --include=dev && npm run build`, start command `npm start`, and readiness route `/api/health`. Including development dependencies during installation supplies TypeScript and its type declarations for compilation even when `NODE_ENV=production` is configured.
 
 1. Create a MongoDB Atlas database and restricted database user. Permit the hosting platform's outbound network access.
 2. Import this repository as a Render service or Blueprint. Configure `MONGODB_URI`, exact `FRONTEND_ORIGIN`, administrator settings, and a generated `SESSION_SECRET`. Keep demo seeding disabled unless publishing an intentionally synthetic evaluation demo.
-3. Deploy the frontend separately to Netlify or Vercel. Configure its server-side `BACKEND_URL` to the Render service origin, without `/api`. Make it available during the frontend build and at runtime. Route browser `/api/*` requests through the frontend's reverse proxy. Preserve the `X-Requested-With`, Origin, cookie, Set-Cookie, and trusted HTTPS forwarding headers.
+3. Deploy the frontend as a separate Node.js web service on Render (as in the [live example](https://doctor-tracker-frontend.onrender.com/login)), or on another Next.js-capable host such as Netlify. Configure its server-side `BACKEND_URL` to the Render API origin, without `/api`, for both build and runtime. Route browser `/api/*` requests through the frontend rewrite and preserve the authentication, cookie, and HTTPS forwarding behavior.
 4. Verify `/api/health`, login, create/edit/delete, logout, and data persistence on the deployed frontend before calling the deployment complete.
 
 For another host, `Dockerfile` builds a non-root production image. Production never downloads or starts the local MongoDB binary; its database must be externally managed.
@@ -141,3 +172,11 @@ See the frontend repository for desktop/mobile screenshots, the application UI, 
 Integration tests validate authentication/logout, CSRF/origin defenses, doctor and patient CRUD, duplicate emails, strict input validation, inclusive date filters, combined search/filter pagination, and real dashboard updates after mutation. The suite uses an isolated real MongoDB process, never the developer's database.
 
 Implementation references: [Express production security](https://expressjs.com/en/advanced/best-practice-security/), [Mongoose schemas and indexes](https://mongoosejs.com/docs/guide.html), and [MongoDB compound index guidance](https://www.mongodb.com/docs/manual/tutorial/equality-sort-range-guideline/).
+
+## Project maintenance
+
+- [Contribution guidelines](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
+- [Bug reports](.github/ISSUE_TEMPLATE/bug_report.md) and [feature requests](.github/ISSUE_TEMPLATE/feature_request.md)
+
+**Keywords:** REST API, Node.js, Express, TypeScript, Mongoose, MongoDB Atlas, session authentication, doctor management, patient management, healthcare admin dashboard.
