@@ -17,11 +17,11 @@
 
 ## Hosted services
 
-| Service | Live URL |
-| --- | --- |
-| Premium Next.js frontend | [doctor-tracker-frontend.onrender.com](https://doctor-tracker-frontend.onrender.com/login) |
-| Express REST API | [doctor-tracker-api-tg86.onrender.com](https://doctor-tracker-api-tg86.onrender.com/api/health) |
-| Database | MongoDB Atlas, dedicated `doctor_tracker` database |
+| Service                  | Live URL                                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| Premium Next.js frontend | [doctor-tracker-frontend.onrender.com](https://doctor-tracker-frontend.onrender.com/login)      |
+| Express REST API         | [doctor-tracker-api-tg86.onrender.com](https://doctor-tracker-api-tg86.onrender.com/api/health) |
+| Database                 | MongoDB Atlas, dedicated `doctor_tracker` database                                              |
 
 Browser requests use the frontend's same-origin `/api/*` rewrite, preserving secure server-side sessions. All public health and authentication checks are documented in the [frontend verification workflow](https://github.com/sajeeb-ahmeed/Doctor-Tracker-Portal/actions/workflows/check-doctortracker-hosting.yml).
 

@@ -1,7 +1,7 @@
 ---
 name: Feature request
 about: Suggest an API or data-model improvement
-title: "feat: "
+title: 'feat: '
 ---
 
 ## Use case and problem

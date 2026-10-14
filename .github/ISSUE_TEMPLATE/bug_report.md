@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: Report a reproducible API behavior
-title: "bug: "
+title: 'bug: '
 ---
 
 ## Endpoint and HTTP method
